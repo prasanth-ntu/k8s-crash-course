@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment # Blueprint for the Pods
+metadata:
+  name: webapp-deployment
+  labels:
+    app: webapp
+spec: # Deployment specific specficiation/configuration
+  replicas: 1 
+  selector: # Label selector (in the deployment spec) to select the Pods to manage. It will match with the labels in the template section.
+    matchLabels:
+      app: webapp
+  template: # Configuration for the Pods (within the configuration of the Deployment). template has its own metadata and spec, similar to Deployment.
+    metadata:
+      labels: # For Pods, labels is a required field.
+        app: webapp
+    spec:
+      containers: # List of containers to run in the Pod. (Mostly 1 main application per pod).
+      # Create a Pod with custom image and name it "webapp", and listen on port 3000.
+      - name: webapp
+        image: nanajanashia/k8s-demo-app:v1.0
+        ports:
+        - containerPort: 3000 # Nodeks app that listens on port 3000.
+        env:
+          - name: USER_NAME
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: mongo-user
+          - name: USER_PWD
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: mongo-password
+          - name: DB_URL
+            valueFrom:
+              configMapKeyRef:
+                name: mongo-config
+                key: mongo-url # Key of the config map data that we want to use from the config map resource.
+--- # Separator for the next resource (Service).
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service # An arbitrary name for the service. This is the endpoint that we will use to access webapp.
+spec:
+  # type: ClusterIP # Default if we do not specify the type. It will create a service that is accessible only within the cluster.
+  type: NodePort # This will create a service that is accessible from outside the cluster.
+  selector: # Why do we need a Label selector in Service? Service needs to forward the request that it gets to endpoint of the Pods. So, it needs to know which Pods to forward the request to (based on the labels in the Pods).
+    app: webapp
+  ports:
+    - protocol: TCP
+      port: 3000 # Sets the port of the service.
+      targetPort: 3000 # Tells Service to which port to forward the request to (from) the Pods.
+      nodePort: 30100 # This will make the service accessible from outside the cluster on port 30100.

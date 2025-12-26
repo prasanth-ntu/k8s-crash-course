@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment # Blueprint for the Pods
+metadata:
+  name: mongo-deployment
+  labels:
+    app: mongo
+spec: # Deployment specific specficiation/configuration
+  replicas: 1 # Since it's a DB, we only need 1 replica. If we want to scale, we need to use StatefulSet instead and not Deployment.
+  selector: # Label selector (in the deployment spec) to select the Pods to manage. It will match with the labels in the template section.
+    matchLabels:
+      app: mongo
+  template: # Configuration for the Pods (within the configuration of the Deployment). template has its own metadata and spec, similar to Deployment.
+    metadata:
+      labels: # For Pods, labels is a required field.
+        app: mongo
+    spec:
+      containers: # List of containers to run in the Pod. (Mostly 1 main application per pod).
+      # Create a Pod with "mongo:5.0" image and name it "mongodb", and listen on port 27017.
+      - name: mongodb
+        image: mongo:5.0 # MongoDB image
+        ports:
+        - containerPort: 27017 # MongoDB port that container will listen on.
+        env:
+          - name: MONGO_INITDB_ROOT_USERNAME
+            # value: secretValue # Reference Secret data here instead of hardcode sensitive data.
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret # Name of the Secret resource that holds the username.
+                key: mongo-user
+          - name: MONGO_INITDB_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: mongo-password # Key of the secret data that we want to use.
+--- # Separator for the next resource (Service).
+apiVersion: v1
+kind: Service # Service is a resource that provides a stable endpoint for the Pods. It will forward the request that it gets to endpoint of the Pods.
+metadata:
+  name: mongo-service # An arbitrary name for the service. This is the endpoint that we will use to access Mongo (which we have defined in mongo-config.yaml as mongo-url).
+spec:
+  selector: # Why do we need a Label selector in Service? Service needs to forward the request that it gets to endpoint of the Pods. So, it needs to know which Pods to forward the request to (based on the labels in the Pods). It will match with the labels in the template section of the Deployment resource.
+    app: mongo
+  ports:
+    - protocol: TCP
+      port: 27017 # Sets the port of the service.
+      targetPort: 27017 # Tells Service to which port to forward the request to (from) the Pods.
+
