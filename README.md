@@ -10,7 +10,30 @@ This demo deploys:
 - External configuration via **ConfigMap** and **Secret**
 - External access to the webapp via **NodePort Service**
 
-![Architecture Overview](https://raw.githubusercontent.com/nanuchi/k8s-in-1-hour/main/k8s-architecture.png)
+**Architecture:**
+
+```mermaid
+graph LR
+    User[👤 Browser] --> NodePort[NodePort Service<br/>webapp-service:30100]
+    
+    NodePort --> WebApp[WebApp Pod<br/>nanajanashia/k8s-demo-app]
+    
+    ConfigMap[📝 ConfigMap<br/>mongo-config] -.->|DB_URL| WebApp
+    Secret[🔐 Secret<br/>mongo-secret] -.->|USER_NAME<br/>USER_PWD| WebApp
+    
+    WebApp --> MongoSvc[ClusterIP Service<br/>mongo-service:27017]
+    MongoSvc --> MongoDB[MongoDB Pod<br/>mongo:5.0]
+    
+    Secret -.->|MONGO_INITDB_ROOT_USERNAME<br/>MONGO_INITDB_ROOT_PASSWORD| MongoDB
+    
+    style User fill:#e1f5ff
+    style NodePort fill:#fff4e6
+    style WebApp fill:#f3e5f5
+    style MongoDB fill:#e8f5e9
+    style ConfigMap fill:#fff9c4
+    style Secret fill:#ffebee
+    style MongoSvc fill:#e0f2f1
+```
 
 ## 📂 Files
 
