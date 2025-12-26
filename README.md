@@ -1,4 +1,4 @@
-# k8s-demo
+# k8s-crash-course
 
 Kubernetes manifests for MongoDB + a demo webapp (from Nana Janashia's k8s demo).
 
